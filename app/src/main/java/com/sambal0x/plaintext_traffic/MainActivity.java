@@ -21,13 +21,14 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
+    private EditText editTextServerAddress;
+    private EditText editTextPort;  // Added for port input
     private EditText editTextMessage;
     private Button buttonSend;
     private TextView textViewResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -37,19 +38,50 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-
+        editTextServerAddress = findViewById(R.id.editTextServerAddress);
+        editTextPort = findViewById(R.id.editTextPort);  // Initialize port EditText
         editTextMessage = findViewById(R.id.editTextMessage);
         buttonSend = findViewById(R.id.buttonSend);
         textViewResponse = findViewById(R.id.textViewResponse);
 
-        // Allow networking on the main thread for simplicity (not recommended for production apps)
+        // Set default values
+        editTextServerAddress.setText("192.168.4.81");
+        editTextPort.setText("12345");  // Default port
+
+        // Allow networking on the main thread
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
 
         buttonSend.setOnClickListener(v -> {
+            String serverAddress = editTextServerAddress.getText().toString().trim();
+            String portString = editTextPort.getText().toString().trim();
             String message = editTextMessage.getText().toString();
-            String response = sendPlainTextMessage("192.168.4.81", 12345, message);
-            textViewResponse.setText(response);
+
+            // Validate inputs
+            if (serverAddress.isEmpty()) {
+                textViewResponse.setText("Error: Server address cannot be empty");
+                return;
+            }
+
+            if (portString.isEmpty()) {
+                textViewResponse.setText("Error: Port cannot be empty");
+                return;
+            }
+
+            if (message.isEmpty()) {
+                textViewResponse.setText("Error: Message cannot be empty");
+                return;
+            }
+
+            try {
+                int serverPort = Integer.parseInt(portString);
+                String response = sendPlainTextMessage(serverAddress, serverPort, message);
+                textViewResponse.setText(response);
+            } catch (NumberFormatException e) {
+                textViewResponse.setText("Error: Invalid port number");
+            } catch (Exception e) {
+                textViewResponse.setText("Error: " + e.getMessage());
+            }
         });
     }
 
